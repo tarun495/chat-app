@@ -7,7 +7,7 @@ import ChatBox from '../components/Chatbox';
 import MessageInput from '../components/MessageInput';
 import './Chat.css';
 
-const socket = io('http://localhost:5000');
+const socket = io(process.env.REACT_APP_BACKEND_URL);
 
 function Chat() {
   const { user } = useAuth();
@@ -43,7 +43,7 @@ function Chat() {
     });
 
     const token = localStorage.getItem('token');
-    axios.get('http://localhost:5000/api/auth/users', {
+    axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/auth/users`, {
       headers: { authorization: token }
     }).then(res => {
       if (Array.isArray(res.data)) {
