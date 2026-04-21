@@ -15,12 +15,17 @@ const io = new Server(server, {
   }
 });
 
-app.use(cors({ origin : '*' }));
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('MongoDB Connected!'))
   .catch(err => console.log(err));
+
+// ✅ Add test route
+app.get('/', (req, res) => {
+  res.send('Server is running!');
+});
 
 app.use('/api/auth', require('./routes/auth'));
 
@@ -29,24 +34,18 @@ const onlineUsers = {};
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // User comes online
   socket.on('addUser', (userId) => {
     onlineUsers[userId] = socket.id;
     io.emit('getOnlineUsers', Object.keys(onlineUsers));
   });
 
-  // User sends message
   socket.on('sendMessage', ({ senderId, receiverId, message }) => {
     const receiverSocket = onlineUsers[receiverId];
     if (receiverSocket) {
-      io.to(receiverSocket).emit('receiveMessage', {
-        senderId,
-        message
-      });
+      io.to(receiverSocket).emit('receiveMessage', { senderId, message });
     }
   });
 
-  // ✅ Typing indicator
   socket.on('typing', ({ senderId, receiverId }) => {
     const receiverSocket = onlineUsers[receiverId];
     if (receiverSocket) {
@@ -54,7 +53,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ✅ Stop typing
   socket.on('stopTyping', ({ senderId, receiverId }) => {
     const receiverSocket = onlineUsers[receiverId];
     if (receiverSocket) {
@@ -62,7 +60,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // User disconnects
   socket.on('disconnect', () => {
     Object.keys(onlineUsers).forEach(key => {
       if (onlineUsers[key] === socket.id) {
@@ -74,6 +71,7 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(process.env.PORT, () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+// ✅ Added fallback port
+server.listen(process.env.PORT || 5000, () => {
+  console.log(`Server running on port ${process.env.PORT || 5000}`);
 });
